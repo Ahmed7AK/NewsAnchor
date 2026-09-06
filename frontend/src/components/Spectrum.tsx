@@ -23,12 +23,14 @@ export function leanColor(lean: LeanLabel): string {
 export function Spectrum({
   histogram,
   gaps,
+  unrated = 0,
 }: {
   histogram: Partial<Record<LeanLabel, number>>;
   gaps: LeanLabel[];
+  unrated?: number;
 }) {
   return (
-    <div className="spectrum" role="img" aria-label={describe(histogram, gaps)}>
+    <div className="spectrum" role="img" aria-label={describe(histogram, gaps, unrated)}>
       {SPECTRUM.map((lean) => {
         const count = histogram[lean] ?? 0;
         const isGap = gaps.includes(lean);
@@ -43,6 +45,21 @@ export function Spectrum({
           </div>
         );
       })}
+
+      {/* Outlets with no meaningful position on a US left-right axis -- mostly
+          international. Shown as a separate trailing cell rather than folded
+          into "center", but shown, because a story covered only by
+          international outlets would otherwise render as an empty row that
+          looks identical to no coverage at all. */}
+      {unrated > 0 && (
+        <div
+          className="cell unrated-cell"
+          style={{ background: leanColor("unrated") }}
+          title={`${unrated} unrated / international newsroom${unrated === 1 ? "" : "s"}`}
+        >
+          {unrated} intl
+        </div>
+      )}
     </div>
   );
 }
@@ -50,13 +67,15 @@ export function Spectrum({
 function describe(
   histogram: Partial<Record<LeanLabel, number>>,
   gaps: LeanLabel[],
+  unrated: number,
 ): string {
   const covered = SPECTRUM.filter((l) => (histogram[l] ?? 0) > 0);
   const parts = [
     covered.length
       ? `Covered by ${covered.map((l) => `${histogram[l]} ${l}`).join(", ")}`
-      : "No rated outlets covered this",
+      : "No outlets with a rated position covered this",
   ];
+  if (unrated > 0) parts.push(`${unrated} unrated or international newsroom(s)`);
   if (gaps.length) parts.push(`no coverage from ${gaps.join(", ")}`);
   return parts.join("; ") + ".";
 }

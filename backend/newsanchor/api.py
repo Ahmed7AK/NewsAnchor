@@ -32,6 +32,14 @@ _refresh_lock = asyncio.Lock()
 
 def _serialise_article(article, registry: dict[str, Source]) -> dict[str, Any]:
     source = registry.get(article.source_id)
+
+    # The newsroom that did the reporting, which for syndicated copy is the
+    # wire rather than the outlet that reprinted it. Every position claim the
+    # UI makes is keyed off this, so that the coverage list cannot contradict
+    # the histogram sitting directly above it.
+    newsroom_id = article.syndicated_from or article.source_id
+    newsroom = registry.get(newsroom_id)
+
     return {
         "id": article.id,
         "title": article.title,
@@ -49,6 +57,12 @@ def _serialise_article(article, registry: dict[str, Source]) -> dict[str, Any]:
             "state_affiliated": bool(source.state_affiliated) if source else False,
             "paywall": source.paywall if source else None,
         },
+        "newsroom": {
+            "id": newsroom_id,
+            "name": newsroom.name if newsroom else newsroom_id,
+            "lean": newsroom.lean if newsroom else None,
+            "lean_label": newsroom.lean_label if newsroom else "unrated",
+        },
     }
 
 
@@ -57,9 +71,25 @@ def _serialise_story(story: Story, registry: dict[str, Source]) -> dict[str, Any
 
     # The side-by-side view: one representative article per spectrum position,
     # which is the whole point of "balanced exposure".
+    #
+    # Grouped by the *reporting newsroom's* position, and collapsed to one
+    # entry per newsroom. Grouping by the reprinting outlet instead would put
+    # a single AP dispatch under both "lean-left" and "right" and make the
+    # story look cross-spectrum when it is one wire report.
     by_lean: dict[str, list[dict[str, Any]]] = {}
-    for item in articles:
-        by_lean.setdefault(item["source"]["lean_label"], []).append(item)
+    seen_newsrooms: set[str] = set()
+    for item in sorted(articles, key=lambda i: i["published_at"]):
+        newsroom_id = item["newsroom"]["id"]
+        if newsroom_id in seen_newsrooms:
+            continue
+        seen_newsrooms.add(newsroom_id)
+        # How many outlets carried this newsroom's copy, so the UI can say
+        # "reprinted by 3" rather than implying three separate reports.
+        item = {
+            **item,
+            "carried_by": sum(1 for a in articles if a["newsroom"]["id"] == newsroom_id),
+        }
+        by_lean.setdefault(item["newsroom"]["lean_label"], []).append(item)
 
     lead = min(story.articles, key=lambda a: a.published_at)
     return {
@@ -70,6 +100,7 @@ def _serialise_story(story: Story, registry: dict[str, Source]) -> dict[str, Any
         "articles": articles,
         "by_lean": by_lean,
         "lean_histogram": {LEAN_LABELS[k]: v for k, v in story.lean_histogram.items()},
+        "unrated_newsrooms": story.unrated_newsrooms,
         "coverage_gaps": [LEAN_LABELS[g] for g in story.coverage_gaps],
         "balance_score": story.balance_score,
         "diversity_score": story.diversity_score,
@@ -181,7 +212,11 @@ def reading_balance(days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
     """What your feed has actually been made of lately.
 
     Per-story balance scores can all look healthy while the feed as a whole is
-    dominated by three outlets. This endpoint is the check on that.
+    dominated by three newsrooms. This endpoint is the check on that.
+
+    Counts are per reporting newsroom, so wire copy read on three different
+    sites counts once, against the wire. `by_source` keeps its name for
+    compatibility but its ids are newsroom ids.
     """
     registry = default_registry()
     with db.connect() as conn:

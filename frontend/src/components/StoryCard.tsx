@@ -28,7 +28,11 @@ export function StoryCard({ story }: { story: StoryRef }) {
 
       {story.neutral_summary && <p className="neutral">{story.neutral_summary}</p>}
 
-      <Spectrum histogram={story.lean_histogram} gaps={story.coverage_gaps} />
+      <Spectrum
+        histogram={story.lean_histogram}
+        gaps={story.coverage_gaps}
+        unrated={story.unrated_newsrooms}
+      />
 
       <div className="metrics">
         <span>balance {story.balance_score.toFixed(2)}</span>
@@ -78,17 +82,30 @@ function Row({ lean, articles }: { lean: LeanLabel; articles: ArticleRef[] }) {
               {article.title}
             </a>
             <div className="outlet">
-              {article.source.name}
-              {article.syndicated_from && (
-                <span className="tag">via {article.syndicated_from}</span>
+              {/* Credit the newsroom that reported it. For syndicated copy that
+                  is the wire, and the outlet that reprinted it is named after,
+                  so this line agrees with the spectrum bar above. */}
+              {article.syndicated_from ? (
+                <>
+                  {article.newsroom.name}
+                  <span className="tag">
+                    {article.carried_by && article.carried_by > 1
+                      ? `reprinted by ${article.carried_by} outlets`
+                      : `reprinted by ${article.source.name}`}
+                  </span>
+                </>
+              ) : (
+                article.source.name
               )}
               {article.source.state_affiliated && (
                 <span className="tag state">state-affiliated</span>
               )}
               {article.source.paywall === "hard" && <span className="tag">paywall</span>}
-              {article.source.country && article.source.country !== "US" && (
-                <span className="tag">{article.source.country}</span>
-              )}
+              {!article.syndicated_from &&
+                article.source.country &&
+                article.source.country !== "US" && (
+                  <span className="tag">{article.source.country}</span>
+                )}
             </div>
           </div>
         </div>

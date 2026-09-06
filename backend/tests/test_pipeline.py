@@ -157,7 +157,11 @@ def test_reading_balance_reports_share_per_outlet(tmp_path, registry):
         db.save_digest(conn, digest)
         counts = db.reading_balance(conn, days=30)
 
-    assert counts["leftpaper"] == 3
+    # Attribution is per newsroom: leftpaper's two originals, with its AP
+    # reprint counted against 'ap'. See
+    # test_reading_balance_attributes_reprints_to_the_wire.
+    assert counts["leftpaper"] == 2
+    assert counts["ap"] == 3
     assert sum(counts.values()) == 8
 
 
@@ -171,3 +175,28 @@ def test_window_start_reflects_options(registry):
     options = DigestOptions(window_hours=6)
     digest = build_digest([], list(registry.values()), registry, options, now=NOW)
     assert digest.window_start == NOW - timedelta(hours=6)
+
+
+def test_reading_balance_attributes_reprints_to_the_wire(tmp_path, registry):
+    """Regression: this view used to count the reprinting outlet.
+
+    One AP dispatch carried by three outlets was reported as three outlets
+    across two spectrum positions, making your reading look more balanced than
+    it was -- the exact distortion this view exists to catch.
+    """
+    sources = list(registry.values())
+    digest = build_digest(sample_articles(), sources, registry, DigestOptions(), now=NOW)
+    path = tmp_path / "wire-balance.db"
+
+    with db.connect(path) as conn:
+        db.save_digest(conn, digest)
+        counts = db.reading_balance(conn, days=30)
+
+    # The three cyclone reprints collapse into one AP entry...
+    assert counts.get("ap") == 3
+    # ...and no longer inflate the carriers' own totals. leftpaper filed two
+    # original pieces and reprinted one AP story; only the two are its own.
+    assert counts["leftpaper"] == 2
+    assert counts["rightmag"] == 1, "one original Senate piece; its cyclone item was AP"
+    assert counts.get("rightpaper") is None, "rightpaper only ever carried wire copy"
+    assert sum(counts.values()) == 8

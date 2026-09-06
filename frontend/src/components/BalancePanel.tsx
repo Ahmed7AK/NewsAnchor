@@ -33,6 +33,10 @@ export function BalancePanel({ data }: { data: ReadingBalanceRef }) {
       )}
 
       <h3 style={{ fontSize: 15 }}>By spectrum position</h3>
+      <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -4 }}>
+        Counted per reporting newsroom — a wire story you saw on three sites
+        counts once, against the wire.
+      </p>
       <table>
         <tbody>
           {Object.entries(data.by_lean)
@@ -66,11 +70,11 @@ export function BalancePanel({ data }: { data: ReadingBalanceRef }) {
         </tbody>
       </table>
 
-      <h3 style={{ marginTop: 28, fontSize: 15 }}>By outlet</h3>
+      <h3 style={{ marginTop: 28, fontSize: 15 }}>By newsroom</h3>
       <table>
         <thead>
           <tr>
-            <th>outlet</th>
+            <th>newsroom</th>
             <th className="num">articles</th>
             <th className="num">share</th>
           </tr>

@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS stories (
     digest_id       INTEGER NOT NULL REFERENCES digests(id) ON DELETE CASCADE,
     lean_histogram  TEXT NOT NULL,
     coverage_gaps   TEXT NOT NULL,
+    unrated_newsrooms INTEGER NOT NULL DEFAULT 0,
     balance_score   REAL NOT NULL,
     diversity_score REAL NOT NULL,
     prominence      REAL NOT NULL,
@@ -72,6 +73,21 @@ CREATE TABLE IF NOT EXISTS story_articles (
 
 DEFAULT_DB = Path.home() / ".newsanchor" / "newsanchor.db"
 
+# Columns added after the first release, applied to databases created before
+# they existed. CREATE TABLE IF NOT EXISTS silently leaves an older table
+# alone, so without this a pre-existing db fails on the new column.
+_ADDED_COLUMNS = {
+    "stories": [("unrated_newsrooms", "INTEGER NOT NULL DEFAULT 0")],
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, columns in _ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        for name, decl in columns:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+
 
 @contextmanager
 def connect(path: Path | str | None = None) -> Iterator[sqlite3.Connection]:
@@ -82,6 +98,7 @@ def connect(path: Path | str | None = None) -> Iterator[sqlite3.Connection]:
     conn.execute("PRAGMA foreign_keys = ON")
     try:
         conn.executescript(SCHEMA)
+        _migrate(conn)
         yield conn
         conn.commit()
     finally:
@@ -135,13 +152,14 @@ def save_digest(conn: sqlite3.Connection, digest: Digest) -> int:
             )
 
         conn.execute(
-            "INSERT INTO stories (id, digest_id, lean_histogram, coverage_gaps,"
-            " balance_score, diversity_score, prominence, rank_score, neutral_summary,"
-            " position) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO stories (id, digest_id, lean_histogram, unrated_newsrooms,"
+            " coverage_gaps, balance_score, diversity_score, prominence, rank_score,"
+            " neutral_summary, position) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (
                 story.id,
                 digest_id,
                 json.dumps({str(k): v for k, v in story.lean_histogram.items()}),
+                story.unrated_newsrooms,
                 json.dumps(story.coverage_gaps),
                 story.balance_score,
                 story.diversity_score,
@@ -204,6 +222,7 @@ def load_digest(conn: sqlite3.Connection, digest_id: int | None = None) -> Diges
                 id=srow["id"],
                 articles=articles,
                 lean_histogram={int(k): v for k, v in json.loads(srow["lean_histogram"]).items()},
+                unrated_newsrooms=srow["unrated_newsrooms"],
                 coverage_gaps=json.loads(srow["coverage_gaps"]),
                 balance_score=srow["balance_score"],
                 diversity_score=srow["diversity_score"],
@@ -216,15 +235,23 @@ def load_digest(conn: sqlite3.Connection, digest_id: int | None = None) -> Diges
 
 
 def reading_balance(conn: sqlite3.Connection, days: int = 30) -> dict[str, int]:
-    """How many articles per source landed in your digests recently.
+    """How many articles per *newsroom* landed in your digests recently.
 
     The honest check on whether the app is doing its job: if this is 70% one
-    outlet, the feed is not diverse no matter what the per-story scores say.
+    newsroom, the feed is not diverse no matter what the per-story scores say.
+
+    Attribution follows the reporting newsroom, not the outlet that reprinted
+    it -- COALESCE(syndicated_from, source_id). Counting the carrier instead
+    would report one AP dispatch read on three sites as three outlets across
+    two positions, telling you your reading was more balanced than it was.
+    That is precisely the distortion this view exists to catch, so it must not
+    reproduce it.
     """
     rows = conn.execute(
-        "SELECT a.source_id, COUNT(*) AS n FROM articles a"
+        "SELECT COALESCE(a.syndicated_from, a.source_id) AS newsroom_id,"
+        " COUNT(*) AS n FROM articles a"
         " WHERE a.first_seen_at >= datetime('now', ?)"
-        " GROUP BY a.source_id ORDER BY n DESC",
+        " GROUP BY newsroom_id ORDER BY n DESC",
         (f"-{int(days)} days",),
     ).fetchall()
-    return {row["source_id"]: row["n"] for row in rows}
+    return {row["newsroom_id"]: row["n"] for row in rows}

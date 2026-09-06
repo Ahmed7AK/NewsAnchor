@@ -81,6 +81,9 @@ cd frontend && npm install && npm run dev # terminal 2 -> :5173
 | `newsanchor balance` | What your feed has actually consisted of |
 | `newsanchor serve` | Run the API for the frontend |
 
+The frontend proxies `/api` to `http://127.0.0.1:8000` by default; override
+with `NEWSANCHOR_API=http://127.0.0.1:9000 npm run dev`.
+
 Useful flags: `--window-hours`, `--min-sources 2` (only corroborated
 stories), `--include-state-affiliated`, `--summarise`.
 
@@ -134,6 +137,9 @@ without that framing quietly entering your feed as independent reporting.
   explained in `backend/newsanchor/cluster.py`.
 - **Headline + blurb only.** Outlets with description-less feeds cluster
   measurably worse (ARI 0.76 vs 0.926).
+- **No live run has ever happened.** Everything is verified against synthetic
+  fixtures and a browser smoke test. The first real fetch will be on your
+  machine — see "Known limitations" above about feed rot.
 
 ## Architecture
 
@@ -160,9 +166,14 @@ offline.
 
 ```bash
 cd backend
-python -m pytest tests/ -q            # 54 tests, no network required
+python -m pytest tests/ -q            # 59 tests, no network required
 python tests/benchmark_cluster.py     # clustering quality sweep
 ruff check newsanchor tests
+
+cd ../frontend
+npm run lint && npm run build
+npm run smoke                         # renders the app in Chromium; needs
+                                      # `newsanchor serve` + `npm run dev`
 ```
 
 Change anything in `cluster.py` and re-run the benchmark — a regression test

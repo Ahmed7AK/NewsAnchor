@@ -93,6 +93,11 @@ class Story:
     articles: list[Article] = field(default_factory=list)
     # Filled in by balance.py
     lean_histogram: dict[int, int] = field(default_factory=dict)
+    # Independent newsrooms with no meaningful position on the US left-right
+    # axis (mostly international). Tracked separately rather than folded into
+    # "center", which would be a lie -- but it must still be *visible*, or a
+    # story covered only by international outlets renders as no coverage.
+    unrated_newsrooms: int = 0
     coverage_gaps: list[int] = field(default_factory=list)
     balance_score: float = 0.0
     diversity_score: float = 0.0

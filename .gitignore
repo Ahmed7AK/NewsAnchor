@@ -9,3 +9,4 @@ dist/
 .env
 *.db
 *.sqlite3
+smoke-out/

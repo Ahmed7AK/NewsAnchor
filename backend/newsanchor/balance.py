@@ -155,8 +155,9 @@ def score_story(
     balance_weight: float = 0.35,
     diversity_weight: float = 0.25,
 ) -> Story:
-    hist, _unrated = lean_histogram(story, registry)
+    hist, unrated = lean_histogram(story, registry)
     story.lean_histogram = hist
+    story.unrated_newsrooms = unrated
     story.balance_score = round(balance_score(hist, pollable), 4)
     story.diversity_score = diversity_score(story, registry)
     story.prominence = prominence(story, now)

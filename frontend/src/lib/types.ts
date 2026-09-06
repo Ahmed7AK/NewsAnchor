@@ -13,6 +13,13 @@ export interface SourceRef {
   paywall: string | null;
 }
 
+export interface NewsroomRef {
+  id: string;
+  name: string;
+  lean: number | null;
+  lean_label: LeanLabel;
+}
+
 export interface ArticleRef {
   id: string;
   title: string;
@@ -21,6 +28,10 @@ export interface ArticleRef {
   published_at: string;
   syndicated_from: string | null;
   source: SourceRef;
+  /** Who actually reported it -- the wire, for syndicated copy. */
+  newsroom: NewsroomRef;
+  /** How many outlets carried this newsroom's copy. Only set inside by_lean. */
+  carried_by?: number;
 }
 
 export interface StoryRef {
@@ -31,6 +42,7 @@ export interface StoryRef {
   articles: ArticleRef[];
   by_lean: Partial<Record<LeanLabel, ArticleRef[]>>;
   lean_histogram: Partial<Record<LeanLabel, number>>;
+  unrated_newsrooms: number;
   coverage_gaps: LeanLabel[];
   balance_score: number;
   diversity_score: number;

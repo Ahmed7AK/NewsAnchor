@@ -100,5 +100,105 @@ def test_reading_balance_reports_shares(tmp_path, monkeypatch, registry):
     body = client.get("/api/reading-balance").json()
     assert body["total_articles"] == 8
     shares = {row["id"]: row["share"] for row in body["by_source"]}
-    assert abs(shares["leftpaper"] - 0.375) < 1e-6
+    # 2 of 8, not 3: leftpaper's AP reprint is attributed to the wire.
+    assert abs(shares["leftpaper"] - 0.25) < 1e-6
+    assert abs(shares["ap"] - 0.375) < 1e-6
     assert sum(body["by_lean"].values()) == 8
+
+
+def _seed(tmp_path, monkeypatch, registry, name="wire.db"):
+    from conftest import NOW
+
+    from newsanchor import db
+    from newsanchor.digest import DigestOptions, build_digest
+    from tests.test_pipeline import sample_articles
+
+    path = tmp_path / name
+    monkeypatch.setattr("newsanchor.db.DEFAULT_DB", path)
+    monkeypatch.setattr("newsanchor.api.default_registry", lambda: registry)
+    digest = build_digest(
+        sample_articles(), list(registry.values()), registry, DigestOptions(), now=NOW
+    )
+    with db.connect(path) as conn:
+        db.save_digest(conn, digest)
+    return path
+
+
+def test_by_lean_never_contradicts_the_histogram(tmp_path, monkeypatch, registry):
+    """Regression: the coverage list used to group by the reprinting outlet.
+
+    A single AP dispatch carried by a left-leaning and a right-leaning paper
+    appeared under both positions, so the story read as cross-spectrum when it
+    was one wire report -- directly contradicting the histogram shown above it.
+    """
+    _seed(tmp_path, monkeypatch, registry)
+    body = client.get("/api/digest").json()
+
+    cyclone = next(s for s in body["stories"] if "Cyclone" in s["headline"])
+
+    # Three outlets carried it, but they are one AP dispatch.
+    assert cyclone["reprint_count"] == 3
+    assert sum(len(v) for v in cyclone["by_lean"].values()) == 1, (
+        "three reprints of one wire story must collapse to a single entry"
+    )
+
+    # Every position named in by_lean must be backed by the histogram (or be
+    # the unrated bucket), never invented by the carrier's lean.
+    for label, items in cyclone["by_lean"].items():
+        if label == "unrated":
+            assert cyclone["unrated_newsrooms"] >= len(items)
+        else:
+            assert cyclone["lean_histogram"].get(label, 0) >= len(items), (
+                f"by_lean claims {label} coverage the histogram does not show"
+            )
+
+
+def test_coverage_entries_report_the_newsroom_not_the_carrier(tmp_path, monkeypatch, registry):
+    _seed(tmp_path, monkeypatch, registry, name="newsroom.db")
+    body = client.get("/api/digest").json()
+    cyclone = next(s for s in body["stories"] if "Cyclone" in s["headline"])
+
+    entry = next(iter(cyclone["by_lean"].values()))[0]
+    assert entry["newsroom"]["id"] == "ap", "must attribute to the wire, not the reprinter"
+    assert entry["carried_by"] == 3, "UI needs the reprint count to say 'reprinted by 3'"
+
+
+def test_unrated_coverage_is_visible_rather_than_silently_dropped(tmp_path, monkeypatch, registry):
+    """A story carried only by international outlets used to render as a row of
+    empty spectrum cells -- indistinguishable from no coverage at all."""
+    from conftest import NOW, art
+
+    from newsanchor import db
+    from newsanchor.digest import DigestOptions, build_digest
+
+    path = tmp_path / "intl.db"
+    monkeypatch.setattr("newsanchor.db.DEFAULT_DB", path)
+    monkeypatch.setattr("newsanchor.api.default_registry", lambda: registry)
+
+    articles = [
+        art(
+            "intlnews",
+            "Earthquake strikes off Japan",
+            summary="A quake struck off Honshu, no tsunami warning issued.",
+        ),
+        art(
+            "intlnews2",
+            "Quake hits waters near Japan",
+            summary="A tremor was recorded off the Honshu coast, no warning issued.",
+        ),
+    ]
+    digest = build_digest(articles, list(registry.values()), registry, DigestOptions(), now=NOW)
+    with db.connect(path) as conn:
+        db.save_digest(conn, digest)
+
+    story = client.get("/api/digest").json()["stories"][0]
+    assert sum(story["lean_histogram"].values()) == 0
+    assert story["unrated_newsrooms"] == 2, (
+        "international coverage must be counted somewhere the UI can show it"
+    )
+
+
+def test_unrated_count_survives_the_database_roundtrip(tmp_path, monkeypatch, registry):
+    _seed(tmp_path, monkeypatch, registry, name="roundtrip.db")
+    body = client.get("/api/digest").json()
+    assert all("unrated_newsrooms" in s for s in body["stories"])
