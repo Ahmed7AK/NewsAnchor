@@ -1,0 +1,526 @@
+# NewsAnchor source registry
+# ---------------------------------------------------------------------------
+# This file is the single place where "who do we listen to, and how do we
+# weight them" is decided. It is meant to be edited. Disagree with a lean
+# value? Change it. The pipeline reads this at runtime; nothing is hardcoded.
+#
+# lean: integer on a 5-point scale
+#   -2 left   -1 lean-left   0 center   +1 lean-right   +2 right
+#   null      unrated / not meaningfully placeable on a US left-right axis
+#             (most non-US outlets fall here on purpose -- see docs/RESEARCH.md)
+#
+# IMPORTANT, please read:
+#   The `lean` values below are a coarse editorial starting point assembled
+#   from the broad consensus of the public bias charts (AllSides, Ad Fontes,
+#   Media Bias/Fact Check) as of early 2026. They are NOT licensed data from
+#   any of those organisations, and they are not authoritative. They exist so
+#   the app has something to balance against out of the box. If you want real
+#   ratings, wire up a licensed provider -- see `bias_providers` in config and
+#   docs/RESEARCH.md#bias-and-credibility-data.
+#
+#   A left-right axis is a US-centric lens. It says nothing about accuracy.
+#   A source can be dead-center and consistently wrong.
+#
+# tier:
+#   wire       - agency copy that gets syndicated verbatim to hundreds of
+#                outlets. Deduplicated aggressively; does not count toward
+#                "independent corroboration".
+#   national   - general-interest national outlet
+#   magazine   - opinion-forward long-form
+#   nonprofit  - nonprofit / public-service newsroom
+#   intl       - non-US outlet, included for perspective diversity
+#
+# state_affiliated: outlet is funded/controlled by a national government in a
+#   way that materially constrains its editorial line. These are DISABLED by
+#   default. Turn them on if you want to see them, but they are labelled
+#   loudly in the UI. Note this flag is about editorial control, not funding
+#   alone -- BBC and NPR receive public money and are not flagged.
+#
+# feeds: RSS/Atom URLs. Verify them on your own machine with:
+#     newsanchor sources check
+#   Feed URLs rot constantly (outlets move or kill them without notice) and
+#   the URLs below could not be validated from the environment this repo was
+#   authored in. Expect a few to be dead on first run.
+
+sources:
+  # -- Wire services ---------------------------------------------------------
+  # AP and Reuters both retired their general public RSS feeds. What is left
+  # is partial. They are still listed because their copy dominates syndication
+  # and the deduper needs to know who they are.
+  - id: ap
+    name: Associated Press
+    homepage: https://apnews.com
+    lean: 0
+    tier: wire
+    country: US
+    feeds:
+      - https://apnews.com/hub/ap-top-news.rss
+    notes: >
+      AP killed its classic RSS endpoints. This hub feed is unofficial and may
+      break. AP's own Content API is enterprise-priced. See docs/RESEARCH.md.
+
+  - id: reuters
+    name: Reuters
+    homepage: https://www.reuters.com
+    lean: 0
+    tier: wire
+    country: GB
+    feeds: []
+    notes: >
+      Reuters shut down public RSS in 2020 and blocks most scraping. Left here
+      as a known wire signature for deduplication -- syndicated Reuters copy is
+      detected via bylines/credit lines, not fetched directly.
+
+  - id: afp
+    name: Agence France-Presse
+    homepage: https://www.afp.com
+    lean: null
+    tier: wire
+    country: FR
+    feeds: []
+    notes: Same situation as Reuters. Detected as syndicated credit, not fetched.
+
+  # -- US national -----------------------------------------------------------
+  - id: npr
+    name: NPR
+    homepage: https://www.npr.org
+    lean: -1
+    tier: nonprofit
+    country: US
+    feeds:
+      - https://feeds.npr.org/1001/rss.xml
+      - https://feeds.npr.org/1004/rss.xml
+
+  - id: nytimes
+    name: The New York Times
+    homepage: https://www.nytimes.com
+    lean: -1
+    tier: national
+    country: US
+    paywall: hard
+    feeds:
+      - https://rss.nytimes.com/services/xml/rss/nyt/World.xml
+      - https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml
+    notes: Also has a free developer API. See docs/RESEARCH.md.
+
+  - id: washingtonpost
+    name: The Washington Post
+    homepage: https://www.washingtonpost.com
+    lean: -1
+    tier: national
+    country: US
+    paywall: hard
+    feeds:
+      - https://feeds.washingtonpost.com/rss/world
+      - https://feeds.washingtonpost.com/rss/politics
+
+  - id: cnn
+    name: CNN
+    homepage: https://www.cnn.com
+    lean: -1
+    tier: national
+    country: US
+    feeds:
+      - http://rss.cnn.com/rss/edition_world.rss
+      - http://rss.cnn.com/rss/cnn_allpolitics.rss
+
+  - id: nbcnews
+    name: NBC News
+    homepage: https://www.nbcnews.com
+    lean: -1
+    tier: national
+    country: US
+    feeds:
+      - https://feeds.nbcnews.com/nbcnews/public/world
+      - https://feeds.nbcnews.com/nbcnews/public/politics
+
+  - id: cbsnews
+    name: CBS News
+    homepage: https://www.cbsnews.com
+    lean: -1
+    tier: national
+    country: US
+    feeds:
+      - https://www.cbsnews.com/latest/rss/world
+      - https://www.cbsnews.com/latest/rss/politics
+
+  - id: abcnews
+    name: ABC News
+    homepage: https://abcnews.go.com
+    lean: -1
+    tier: national
+    country: US
+    feeds:
+      - https://abcnews.go.com/abcnews/internationalheadlines
+      - https://abcnews.go.com/abcnews/politicsheadlines
+
+  - id: usatoday
+    name: USA Today
+    homepage: https://www.usatoday.com
+    lean: 0
+    tier: national
+    country: US
+    feeds:
+      - https://rssfeeds.usatoday.com/usatoday-newstopstories
+
+  - id: csmonitor
+    name: The Christian Science Monitor
+    homepage: https://www.csmonitor.com
+    lean: 0
+    tier: national
+    country: US
+    feeds:
+      - https://rss.csmonitor.com/feeds/world
+
+  - id: axios
+    name: Axios
+    homepage: https://www.axios.com
+    lean: 0
+    tier: national
+    country: US
+    feeds:
+      - https://api.axios.com/feed/
+
+  - id: thehill
+    name: The Hill
+    homepage: https://thehill.com
+    lean: 0
+    tier: national
+    country: US
+    feeds:
+      - https://thehill.com/news/feed/
+
+  - id: politico
+    name: Politico
+    homepage: https://www.politico.com
+    lean: -1
+    tier: national
+    country: US
+    feeds:
+      - https://rss.politico.com/politics-news.xml
+
+  - id: newsweek
+    name: Newsweek
+    homepage: https://www.newsweek.com
+    lean: 0
+    tier: magazine
+    country: US
+    feeds:
+      - https://www.newsweek.com/rss
+
+  - id: wsj
+    name: The Wall Street Journal
+    homepage: https://www.wsj.com
+    lean: 1
+    tier: national
+    country: US
+    paywall: hard
+    feeds:
+      - https://feeds.a.dj.com/rss/RSSWorldNews.xml
+    notes: News desk leans center; the opinion page is well right of it.
+
+  - id: foxnews
+    name: Fox News
+    homepage: https://www.foxnews.com
+    lean: 2
+    tier: national
+    country: US
+    feeds:
+      - https://moxie.foxnews.com/google-publisher/world.xml
+      - https://moxie.foxnews.com/google-publisher/politics.xml
+
+  - id: nypost
+    name: New York Post
+    homepage: https://nypost.com
+    lean: 2
+    tier: national
+    country: US
+    feeds:
+      - https://nypost.com/feed/
+
+  - id: washingtontimes
+    name: The Washington Times
+    homepage: https://www.washingtontimes.com
+    lean: 2
+    tier: national
+    country: US
+    feeds:
+      - https://www.washingtontimes.com/rss/headlines/news/world/
+
+  - id: washingtonexaminer
+    name: Washington Examiner
+    homepage: https://www.washingtonexaminer.com
+    lean: 2
+    tier: national
+    country: US
+    feeds:
+      - https://www.washingtonexaminer.com/feed
+
+  # -- US magazines / opinion-forward ---------------------------------------
+  - id: theatlantic
+    name: The Atlantic
+    homepage: https://www.theatlantic.com
+    lean: -2
+    tier: magazine
+    country: US
+    paywall: soft
+    feeds:
+      - https://www.theatlantic.com/feed/all/
+
+  - id: vox
+    name: Vox
+    homepage: https://www.vox.com
+    lean: -2
+    tier: magazine
+    country: US
+    feeds:
+      - https://www.vox.com/rss/index.xml
+
+  - id: motherjones
+    name: Mother Jones
+    homepage: https://www.motherjones.com
+    lean: -2
+    tier: magazine
+    country: US
+    feeds:
+      - https://www.motherjones.com/feed/
+
+  - id: theintercept
+    name: The Intercept
+    homepage: https://theintercept.com
+    lean: -2
+    tier: nonprofit
+    country: US
+    feeds:
+      - https://theintercept.com/feed/?rss
+
+  - id: propublica
+    name: ProPublica
+    homepage: https://www.propublica.org
+    lean: -1
+    tier: nonprofit
+    country: US
+    feeds:
+      - https://www.propublica.org/feeds/propublica/main
+
+  - id: nationalreview
+    name: National Review
+    homepage: https://www.nationalreview.com
+    lean: 2
+    tier: magazine
+    country: US
+    feeds:
+      - https://www.nationalreview.com/feed/
+
+  - id: reason
+    name: Reason
+    homepage: https://reason.com
+    lean: 1
+    tier: magazine
+    country: US
+    feeds:
+      - https://reason.com/feed/
+    notes: Libertarian rather than conventionally right; the axis fits poorly.
+
+  - id: thedispatch
+    name: The Dispatch
+    homepage: https://thedispatch.com
+    lean: 1
+    tier: magazine
+    country: US
+    paywall: soft
+    feeds:
+      - https://thedispatch.com/feed/
+
+  - id: dailywire
+    name: The Daily Wire
+    homepage: https://www.dailywire.com
+    lean: 2
+    tier: magazine
+    country: US
+    feeds:
+      - https://www.dailywire.com/feeds/rss.xml
+
+  # -- International (perspective diversity) --------------------------------
+  # These carry lean: null deliberately. Mapping "Al Jazeera" or "Deutsche
+  # Welle" onto a US left-right axis produces noise, not signal. They are
+  # balanced on the `country` axis instead.
+  - id: bbc
+    name: BBC News
+    homepage: https://www.bbc.com/news
+    lean: null
+    tier: intl
+    country: GB
+    feeds:
+      - https://feeds.bbci.co.uk/news/world/rss.xml
+
+  - id: guardian
+    name: The Guardian
+    homepage: https://www.theguardian.com
+    lean: -2
+    tier: intl
+    country: GB
+    feeds:
+      - https://www.theguardian.com/world/rss
+    notes: Also has an excellent free Open Platform API. See docs/RESEARCH.md.
+
+  - id: ft
+    name: Financial Times
+    homepage: https://www.ft.com
+    lean: null
+    tier: intl
+    country: GB
+    paywall: hard
+    feeds:
+      - https://www.ft.com/world?format=rss
+
+  - id: economist
+    name: The Economist
+    homepage: https://www.economist.com
+    lean: null
+    tier: intl
+    country: GB
+    paywall: hard
+    feeds:
+      - https://www.economist.com/international/rss.xml
+
+  - id: aljazeera
+    name: Al Jazeera English
+    homepage: https://www.aljazeera.com
+    lean: null
+    tier: intl
+    country: QA
+    feeds:
+      - https://www.aljazeera.com/xml/rss/all.xml
+    notes: >
+      Qatari state-funded. Not flagged state_affiliated because its English
+      service operates with substantial editorial independence -- but its
+      coverage of Gulf politics is worth reading with that in mind.
+
+  - id: dw
+    name: Deutsche Welle
+    homepage: https://www.dw.com
+    lean: null
+    tier: intl
+    country: DE
+    feeds:
+      - https://rss.dw.com/rdf/rss-en-world
+
+  - id: france24
+    name: France 24
+    homepage: https://www.france24.com
+    lean: null
+    tier: intl
+    country: FR
+    feeds:
+      - https://www.france24.com/en/rss
+
+  - id: cbc
+    name: CBC News
+    homepage: https://www.cbc.ca/news
+    lean: null
+    tier: intl
+    country: CA
+    feeds:
+      - https://www.cbc.ca/webfeed/rss/rss-world
+
+  - id: abcaustralia
+    name: ABC News (Australia)
+    homepage: https://www.abc.net.au/news
+    lean: null
+    tier: intl
+    country: AU
+    feeds:
+      - https://www.abc.net.au/news/feed/51120/rss.xml
+
+  - id: thehindu
+    name: The Hindu
+    homepage: https://www.thehindu.com
+    lean: null
+    tier: intl
+    country: IN
+    feeds:
+      - https://www.thehindu.com/news/international/feeder/default.rss
+
+  - id: scmp
+    name: South China Morning Post
+    homepage: https://www.scmp.com
+    lean: null
+    tier: intl
+    country: HK
+    feeds:
+      - https://www.scmp.com/rss/91/feed
+
+  - id: japantimes
+    name: The Japan Times
+    homepage: https://www.japantimes.co.jp
+    lean: null
+    tier: intl
+    country: JP
+    feeds:
+      - https://www.japantimes.co.jp/feed/
+
+  - id: haaretz
+    name: Haaretz
+    homepage: https://www.haaretz.com
+    lean: null
+    tier: intl
+    country: IL
+    paywall: hard
+    feeds:
+      - https://www.haaretz.com/srv/haaretz-latest-headlines
+
+  - id: middleeasteye
+    name: Middle East Eye
+    homepage: https://www.middleeasteye.net
+    lean: null
+    tier: intl
+    country: GB
+    feeds:
+      - https://www.middleeasteye.net/rss
+
+  - id: allafrica
+    name: AllAfrica
+    homepage: https://allafrica.com
+    lean: null
+    tier: intl
+    country: ZA
+    feeds:
+      - https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf
+
+  # -- State-affiliated (disabled by default) --------------------------------
+  # Included so you can see how a story is being framed by state media without
+  # that framing quietly entering your feed as if it were independent
+  # reporting. Enable with `enabled: true` or --include-state-affiliated.
+  - id: xinhua
+    name: Xinhua
+    homepage: https://english.news.cn
+    lean: null
+    tier: intl
+    country: CN
+    state_affiliated: true
+    enabled: false
+    feeds:
+      - https://english.news.cn/rss/world.xml
+
+  - id: globaltimes
+    name: Global Times
+    homepage: https://www.globaltimes.cn
+    lean: null
+    tier: intl
+    country: CN
+    state_affiliated: true
+    enabled: false
+    feeds:
+      - https://www.globaltimes.cn/rss/outbrain.xml
+
+  - id: tass
+    name: TASS
+    homepage: https://tass.com
+    lean: null
+    tier: intl
+    country: RU
+    state_affiliated: true
+    enabled: false
+    feeds:
+      - https://tass.com/rss/v2.xml
