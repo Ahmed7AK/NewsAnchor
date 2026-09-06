@@ -19,7 +19,7 @@ optional supplements (see gdelt.py, newsapi.py) rather than replacements.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
 import feedparser
@@ -28,9 +28,7 @@ import httpx
 from ..models import Article, Source
 from .base import FetchResult
 
-USER_AGENT = (
-    "NewsAnchor/0.1 (personal news aggregator; +https://github.com/Ahmed7AK/NewsAnchor)"
-)
+USER_AGENT = "NewsAnchor/0.1 (personal news aggregator; +https://github.com/Ahmed7AK/NewsAnchor)"
 
 
 def _parse_date(entry) -> datetime | None:
@@ -46,12 +44,12 @@ def _parse_date(entry) -> datetime | None:
         if dt is None:
             continue
         # Naive datetimes from feeds are conventionally UTC.
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
     for key in ("published_parsed", "updated_parsed"):
         parsed = entry.get(key)
         if parsed:
-            return datetime(*parsed[:6], tzinfo=timezone.utc)
+            return datetime(*parsed[:6], tzinfo=UTC)
     return None
 
 
@@ -123,7 +121,10 @@ class RSSAdapter:
 
         try:
             return FetchResult(articles=entries_to_articles(source, resp.content, since))
-        except Exception as exc:  # a malformed feed must not kill the run
+        except Exception as exc:  # noqa: BLE001 - see below
+            # Intentionally broad. feedparser is lenient but not total, and a
+            # single outlet serving malformed XML must cost us that outlet, not
+            # the whole morning's digest. The error is surfaced, not swallowed.
             return FetchResult(errors=[f"{source.id} <{url}>: parse failed: {exc}"])
 
     async def fetch(self, since: datetime) -> FetchResult:

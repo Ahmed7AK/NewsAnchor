@@ -21,7 +21,7 @@ class FetchResult:
     # Non-fatal problems: a dead feed should degrade the run, not end it.
     errors: list[str] = field(default_factory=list)
 
-    def extend(self, other: "FetchResult") -> None:
+    def extend(self, other: FetchResult) -> None:
         self.articles.extend(other.articles)
         self.errors.extend(other.errors)
 

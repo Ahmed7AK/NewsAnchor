@@ -34,5 +34,17 @@ packages = ["newsanchor"]
 [tool.ruff]
 line-length = 100
 
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "BLE"]
+
+[tool.ruff.lint.per-file-ignores]
+# The gold set is prose: multi-line article summaries inside tuples read as
+# implicit concatenation, which is exactly what they are.
+"tests/gold.py" = ["ISC004"]
+# Tests deliberately reach into internals and re-import inside functions.
+"tests/*" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]

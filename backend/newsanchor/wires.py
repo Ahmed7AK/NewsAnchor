@@ -23,12 +23,13 @@ from .models import Article
 # Credit lines as they actually appear in feed bylines and summary text.
 WIRE_PATTERNS: dict[str, re.Pattern] = {
     "ap": re.compile(
-        r"\b(?:the\s+)?associated\s+press\b|\(\s*AP\s*\)|\bAP\s+(?:News|Photo|writer)\b", re.I
+        r"\b(?:the\s+)?associated\s+press\b|\(\s*AP\s*\)|\bAP\s+(?:News|Photo|writer)\b",
+        re.IGNORECASE,
     ),
-    "reuters": re.compile(r"\breuters\b|\(\s*Reuters\s*\)", re.I),
+    "reuters": re.compile(r"\breuters\b|\(\s*Reuters\s*\)", re.IGNORECASE),
     "afp": re.compile(r"\bagence\s+france[- ]presse\b|\bAFP\b"),
-    "pa": re.compile(r"\bpa\s+media\b|\bpress\s+association\b", re.I),
-    "bloomberg": re.compile(r"\bbloomberg\s+news\b", re.I),
+    "pa": re.compile(r"\bpa\s+media\b|\bpress\s+association\b", re.IGNORECASE),
+    "bloomberg": re.compile(r"\bbloomberg\s+news\b", re.IGNORECASE),
 }
 
 

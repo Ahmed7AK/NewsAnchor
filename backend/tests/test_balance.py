@@ -12,7 +12,6 @@ from newsanchor.balance import (
     roster_warnings,
     score_story,
 )
-from newsanchor.cluster import cluster_articles
 from newsanchor.models import Story
 from newsanchor.wires import annotate
 
@@ -81,10 +80,10 @@ def test_diversity_rewards_countries_and_penalises_reprints(registry):
 
 def test_score_story_populates_every_field(registry):
     story = story_of(
-        art("leftpaper", "Senate passes spending bill",
-            summary="The Senate approved the package."),
-        art("rightmag", "Senate clears spending package",
-            summary="Lawmakers approved the measure."),
+        art("leftpaper", "Senate passes spending bill", summary="The Senate approved the package."),
+        art(
+            "rightmag", "Senate clears spending package", summary="Lawmakers approved the measure."
+        ),
     )
     score_story(story, registry, POLLABLE, now=NOW)
     assert 0.0 <= story.balance_score <= 1.0
@@ -103,10 +102,12 @@ def test_gaps_not_reported_for_single_newsroom_stories(registry):
 def test_balance_actually_changes_ranking(registry):
     """The point of the whole exercise: a balanced story should outrank a
     louder but one-sided one."""
-    one_sided = story_of(*[
-        art(sid, f"Left-only story {i}", summary="Only one side covered this.")
-        for i, sid in enumerate(["leftpaper", "leftmag", "leftpaper", "leftmag"])
-    ])
+    one_sided = story_of(
+        *[
+            art(sid, f"Left-only story {i}", summary="Only one side covered this.")
+            for i, sid in enumerate(["leftpaper", "leftmag", "leftpaper", "leftmag"])
+        ]
+    )
     balanced = story_of(
         art("leftpaper", "Balanced story", summary="Covered widely."),
         art("rightmag", "Balanced story", summary="Covered widely."),
@@ -133,13 +134,12 @@ def test_enforce_source_diversity_defers_a_dominant_outlet():
     ordered = enforce_source_diversity(stories, max_share=0.30)
     assert len(ordered) == 10, "nothing may be dropped, only reordered"
 
-    lead_of = lambda s: s.articles[0].source_id  # noqa: E731
-    top5 = [lead_of(s) for s in ordered[:5]]
+    top5 = [s.articles[0].source_id for s in ordered[:5]]
     assert top5.count("leftpaper") <= 3, f"one outlet still dominates the top: {top5}"
 
 
 def test_roster_warnings_flag_missing_and_lopsided(registry):
-    balanced = [s for s in registry.values()]
+    balanced = list(registry.values())
     assert roster_warnings(balanced) == []
 
     from conftest import make_source
@@ -152,3 +152,27 @@ def test_roster_warnings_flag_missing_and_lopsided(registry):
 
 def test_pollable_leans_ignores_unrated(registry):
     assert pollable_leans(list(registry.values())) == {-2, -1, 0, 1, 2}
+
+
+def test_no_gaps_reported_when_only_unrated_outlets_covered_it(registry):
+    """A story carried purely by international outlets has an empty histogram.
+    Reporting all five positions as 'silent' would describe our roster, not
+    the story."""
+    story = story_of(
+        art("intlnews", "Earthquake strikes off Japan", summary="A quake struck off Honshu."),
+        art("intlnews2", "Quake hits near Japan", summary="A tremor was recorded off Honshu."),
+    )
+    score_story(story, registry, POLLABLE, now=NOW)
+    assert sum(story.lean_histogram.values()) == 0
+    assert story.coverage_gaps == []
+
+
+def test_gaps_reported_once_two_rated_newsrooms_weigh_in(registry):
+    story = story_of(
+        art("leftmag", "Housing report published", summary="A report on housing shortfalls."),
+        art(
+            "leftpaper", "Housing report criticised", summary="The housing report found shortfalls."
+        ),
+    )
+    score_story(story, registry, POLLABLE, now=NOW)
+    assert story.coverage_gaps == [0, 1, 2]

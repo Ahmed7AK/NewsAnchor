@@ -6,7 +6,7 @@ from conftest import art
 from sklearn.metrics import adjusted_rand_score
 
 from newsanchor.cluster import DEFAULT_DISTANCE_THRESHOLD, cluster_articles, normalise
-from tests.gold import GOLD, gold_articles
+from tests.gold import gold_articles
 
 
 def test_normalise_strips_outlet_suffix_and_furniture():
@@ -19,10 +19,16 @@ def test_same_event_different_outlets_clusters_together():
     shared = "The Senate voted 63-36 to approve the spending package, averting a shutdown."
     articles = [
         art("leftpaper", "Senate passes spending bill in late-night vote", summary=shared),
-        art("rightmag", "Congress averts shutdown as Senate clears spending package",
-            summary="Lawmakers approved the spending measure hours before funding lapsed."),
-        art("intlnews", "US Senate approves spending bill, ending shutdown standoff",
-            summary="The vote ends weeks of brinkmanship over federal spending levels."),
+        art(
+            "rightmag",
+            "Congress averts shutdown as Senate clears spending package",
+            summary="Lawmakers approved the spending measure hours before funding lapsed.",
+        ),
+        art(
+            "intlnews",
+            "US Senate approves spending bill, ending shutdown standoff",
+            summary="The vote ends weeks of brinkmanship over federal spending levels.",
+        ),
     ]
     stories = cluster_articles(articles)
     assert len(stories) == 1
@@ -31,14 +37,26 @@ def test_same_event_different_outlets_clusters_together():
 
 def test_distinct_events_stay_separate():
     articles = [
-        art("leftpaper", "Senate passes spending bill in late-night vote",
-            summary="The Senate voted 63-36 to approve the spending package."),
-        art("rightmag", "Congress averts shutdown as Senate clears spending package",
-            summary="Lawmakers approved the spending measure before funding lapsed."),
-        art("intlnews", "Magnitude 6.1 earthquake strikes off coast of Japan",
-            summary="The quake struck at a depth of 40km off Honshu. No tsunami warning."),
-        art("intlnews2", "Earthquake of magnitude 6.1 hits waters near Japan",
-            summary="Japan's meteorological agency recorded the tremor off Honshu."),
+        art(
+            "leftpaper",
+            "Senate passes spending bill in late-night vote",
+            summary="The Senate voted 63-36 to approve the spending package.",
+        ),
+        art(
+            "rightmag",
+            "Congress averts shutdown as Senate clears spending package",
+            summary="Lawmakers approved the spending measure before funding lapsed.",
+        ),
+        art(
+            "intlnews",
+            "Magnitude 6.1 earthquake strikes off coast of Japan",
+            summary="The quake struck at a depth of 40km off Honshu. No tsunami warning.",
+        ),
+        art(
+            "intlnews2",
+            "Earthquake of magnitude 6.1 hits waters near Japan",
+            summary="Japan's meteorological agency recorded the tremor off Honshu.",
+        ),
     ]
     stories = cluster_articles(articles)
     assert len(stories) == 2
@@ -57,10 +75,16 @@ def test_headline_that_normalises_to_nothing_does_not_crash():
     # with NaN cosine distances.
     articles = [
         art("leftpaper", "Live updates"),
-        art("rightmag", "Senate passes spending bill in late-night vote",
-            summary="The Senate voted 63-36 to approve the package."),
-        art("intlnews", "US Senate approves spending bill after standoff",
-            summary="The Senate approved the spending package after weeks of talks."),
+        art(
+            "rightmag",
+            "Senate passes spending bill in late-night vote",
+            summary="The Senate voted 63-36 to approve the package.",
+        ),
+        art(
+            "intlnews",
+            "US Senate approves spending bill after standoff",
+            summary="The Senate approved the spending package after weeks of talks.",
+        ),
     ]
     stories = cluster_articles(articles)
     assert sum(len(s.articles) for s in stories) == 3
@@ -75,10 +99,16 @@ def test_no_article_is_lost_or_duplicated():
 
 def test_story_ids_are_stable_across_input_order():
     articles = [
-        art("leftpaper", "Senate passes spending bill in late-night vote",
-            summary="The Senate voted 63-36 to approve the spending package."),
-        art("rightmag", "Congress averts shutdown as Senate clears spending package",
-            summary="Lawmakers approved the spending measure before funding lapsed."),
+        art(
+            "leftpaper",
+            "Senate passes spending bill in late-night vote",
+            summary="The Senate voted 63-36 to approve the spending package.",
+        ),
+        art(
+            "rightmag",
+            "Congress averts shutdown as Senate clears spending package",
+            summary="Lawmakers approved the spending measure before funding lapsed.",
+        ),
     ]
     first = cluster_articles(articles)
     second = cluster_articles(list(reversed(articles)))

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from . import wires
 from .balance import (
@@ -52,7 +52,7 @@ def build_digest(
     fetch_errors: list[str] | None = None,
 ) -> Digest:
     """Pure assembly step -- no network. Given articles, produce the ranked feed."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     window_start = now - timedelta(hours=options.window_hours)
 
     wires.annotate(articles)
@@ -97,12 +97,10 @@ async def run_digest(
     """Fetch live and build. This is the one function that touches the network."""
     options = options or DigestOptions()
     registry = registry or default_registry()
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     window_start = now - timedelta(hours=options.window_hours)
 
-    sources = active_sources(
-        registry, include_state_affiliated=options.include_state_affiliated
-    )
+    sources = active_sources(registry, include_state_affiliated=options.include_state_affiliated)
 
     result = FetchResult()
     result.extend(await RSSAdapter(sources).fetch(window_start))

@@ -25,7 +25,7 @@ import numpy as np
 from sklearn.metrics import adjusted_rand_score
 
 from newsanchor.cluster import cluster_articles
-from tests.gold import GOLD, gold_articles  # noqa: E402
+from tests.gold import GOLD, gold_articles
 
 
 def score(threshold: float, *, use_summary: bool = True) -> tuple[float, int]:
@@ -42,8 +42,7 @@ def score(threshold: float, *, use_summary: bool = True) -> tuple[float, int]:
 
 
 def main() -> None:
-    print(f"gold set: {len(GOLD)} stories, "
-          f"{sum(len(v) for v in GOLD)} articles\n")
+    print(f"gold set: {len(GOLD)} stories, {sum(len(v) for v in GOLD)} articles\n")
     for use_summary in (True, False):
         label = "headline + summary" if use_summary else "headline only"
         print(f"--- {label}")

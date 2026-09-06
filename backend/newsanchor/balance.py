@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from .models import LEAN_ORDER, Article, Source, Story
 from .wires import independent_newsrooms
@@ -50,16 +50,14 @@ def _independent_articles(story: Story) -> list[Article]:
     return list(best.values())
 
 
-def lean_histogram(
-    story: Story, registry: dict[str, Source]
-) -> tuple[dict[int, int], int]:
+def lean_histogram(story: Story, registry: dict[str, Source]) -> tuple[dict[int, int], int]:
     """Count independent newsrooms at each point on the axis.
 
     Returns (histogram, unrated_count). Unrated is not a bucket on the axis --
     it is mostly international outlets, which are counted toward diversity
     instead. Folding them into "center" would be a lie.
     """
-    hist = {lean: 0 for lean in LEAN_ORDER}
+    hist = dict.fromkeys(LEAN_ORDER, 0)
     unrated = 0
     for article in _independent_articles(story):
         # Attribute to the newsroom that did the reporting, not the outlet that
@@ -128,11 +126,7 @@ def diversity_score(story: Story, registry: dict[str, Source]) -> float:
     # large, between 12 and 15 is noise.
     newsroom = min(len(rooms), 6) / 6.0
 
-    countries = {
-        registry[a.source_id].country
-        for a in story.articles
-        if a.source_id in registry
-    }
+    countries = {registry[a.source_id].country for a in story.articles if a.source_id in registry}
     country = min(len(countries), 4) / 4.0
 
     reprinted = sum(1 for a in story.articles if a.syndicated_from)
@@ -143,7 +137,7 @@ def diversity_score(story: Story, registry: dict[str, Source]) -> float:
 
 def prominence(story: Story, now: datetime | None = None) -> float:
     """0..1 -- how much attention the story got, decayed by age."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     volume = min(len(story.articles), 12) / 12.0
 
     age_hours = max((now - story.newest).total_seconds() / 3600.0, 0.0)
@@ -167,13 +161,14 @@ def score_story(
     story.diversity_score = diversity_score(story, registry)
     story.prominence = prominence(story, now)
 
-    # Gaps are only reported once at least two independent newsrooms ran it,
-    # so we don't cry "blind spot" over every single-outlet item.
-    story.coverage_gaps = (
-        coverage_gaps(hist, pollable)
-        if len(independent_newsrooms(story.articles)) >= 2
-        else []
-    )
+    # A gap is only meaningful once enough *rated* newsrooms have weighed in
+    # to make silence elsewhere informative. Two guards:
+    #   - fewer than two rated newsrooms and we would be crying "blind spot"
+    #     over an ordinary small story;
+    #   - a story carried only by unrated outlets (typically international)
+    #     has an empty histogram, and reporting all five positions as silent
+    #     says nothing about the story and everything about our roster.
+    story.coverage_gaps = coverage_gaps(hist, pollable) if sum(hist.values()) >= 2 else []
 
     prominence_weight = 1.0 - balance_weight - diversity_weight
     story.rank_score = round(
@@ -185,9 +180,7 @@ def score_story(
     return story
 
 
-def enforce_source_diversity(
-    stories: list[Story], *, max_share: float = 0.30
-) -> list[Story]:
+def enforce_source_diversity(stories: list[Story], *, max_share: float = 0.30) -> list[Story]:
     """Reorder so no single newsroom dominates the top of the feed.
 
     Without this, an outlet that simply publishes more than the others ends up

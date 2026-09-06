@@ -17,7 +17,7 @@ Requires NEWSAPI_KEY in the environment.
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 import httpx
@@ -59,7 +59,7 @@ class NewsAPIAdapter:
             except (ValueError, TypeError):
                 continue
             if published.tzinfo is None:
-                published = published.replace(tzinfo=timezone.utc)
+                published = published.replace(tzinfo=UTC)
             if published < since:
                 continue
             domain = urlparse(url).netloc

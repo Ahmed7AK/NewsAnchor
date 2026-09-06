@@ -64,7 +64,7 @@ DEFAULT_DISTANCE_THRESHOLD = 0.80
 BOILERPLATE = re.compile(
     r"\b(?:live\s+updates?|breaking|watch|video|photos?|opinion|analysis|explainer|"
     r"what\s+to\s+know|here'?s\s+what|read\s+more)\b",
-    re.I,
+    re.IGNORECASE,
 )
 # Trailing " - BBC News", " | Reuters", " — The Guardian"
 TRAILING_OUTLET = re.compile(r"\s*[-|—–]\s*[A-Z][\w.&' ]{2,30}\s*$")
@@ -140,8 +140,9 @@ def cluster_articles(
     live_idx = np.flatnonzero(norms > 0)
     dead_idx = np.flatnonzero(norms == 0)
 
-    stories: list[Story] = [Story(id=_story_id([articles[i]]), articles=[articles[i]])
-                            for i in dead_idx]
+    stories: list[Story] = [
+        Story(id=_story_id([articles[i]]), articles=[articles[i]]) for i in dead_idx
+    ]
 
     if len(live_idx) == 1:
         i = int(live_idx[0])
@@ -159,7 +160,9 @@ def cluster_articles(
         labels = model.fit_predict(dense[live_idx])
 
         grouped: dict[int, list[Article]] = defaultdict(list)
-        for label, idx in zip(labels, live_idx):
+        # strict=: labels and live_idx must correspond 1:1; a mismatch would
+        # silently drop articles from the digest.
+        for label, idx in zip(labels, live_idx, strict=True):
             grouped[int(label)].append(articles[int(idx)])
 
         for members in grouped.values():

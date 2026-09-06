@@ -17,7 +17,7 @@ Endpoint is public; be polite about request rate anyway.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 import httpx
@@ -64,7 +64,7 @@ class GDELTAdapter:
     def _parse_seendate(raw: str) -> datetime | None:
         # GDELT returns e.g. "20260906T131500Z"
         try:
-            return datetime.strptime(raw, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+            return datetime.strptime(raw, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
         except (TypeError, ValueError):
             return None
 

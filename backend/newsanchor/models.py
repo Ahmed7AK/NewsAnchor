@@ -10,8 +10,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import IntEnum
-from typing import Optional
 
 # The five-point axis used throughout. Deliberately coarse: finer gradations
 # imply a precision that source-level bias ratings do not have.
@@ -39,10 +37,10 @@ class Source:
     name: str
     homepage: str
     feeds: tuple[str, ...] = ()
-    lean: Optional[int] = None
+    lean: int | None = None
     tier: str = Tier.NATIONAL
     country: str = "US"
-    paywall: Optional[str] = None
+    paywall: str | None = None
     state_affiliated: bool = False
     enabled: bool = True
     notes: str = ""
@@ -69,7 +67,7 @@ class Article:
     # Populated only when full-text extraction is enabled.
     body: str = ""
     # Set when the article is detectably syndicated wire copy (see wires.py).
-    syndicated_from: Optional[str] = None
+    syndicated_from: str | None = None
 
     @property
     def id(self) -> str:
