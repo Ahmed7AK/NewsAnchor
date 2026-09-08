@@ -56,12 +56,17 @@ Runs with **no API keys and no accounts**.
 ```bash
 # backend
 cd backend
-uv venv .venv && source .venv/bin/activate     # or: python -m venv .venv
-uv pip install -e ".[dev]"
+python3 -m venv .venv && source .venv/bin/activate   # or: uv venv .venv
+pip install -e ".[dev]"                              # or: uv pip install -e ".[dev]"
 
 newsanchor sources check      # verify feed URLs resolve (some will be dead)
 newsanchor refresh            # fetch the last 24h and print the digest
 ```
+
+`pip install .` (non-editable) works too — the default roster ships inside the
+wheel. An editable install or a run from the checkout prefers the repo's own
+`data/sources.yaml`, so your edits there take effect. Override the location
+entirely with `NEWSANCHOR_SOURCES=/path/to/sources.yaml`.
 
 For the web UI, run the API and the frontend together:
 
@@ -166,7 +171,7 @@ offline.
 
 ```bash
 cd backend
-python -m pytest tests/ -q            # 59 tests, no network required
+python -m pytest tests/ -q            # 68 tests, no network required
 python tests/benchmark_cluster.py     # clustering quality sweep
 ruff check newsanchor tests
 

@@ -31,6 +31,13 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["newsanchor"]
 
+# Ship the default roster inside the wheel so a non-editable `pip install .`
+# still has a registry to read. An editable install or a run from the repo
+# resolves to the checkout's own data/sources.yaml first, so your edits there
+# keep winning -- see _candidates() in newsanchor/sources.py.
+[tool.hatch.build.targets.wheel.force-include]
+"../data/sources.yaml" = "newsanchor/data/sources.yaml"
+
 [tool.ruff]
 line-length = 100
 

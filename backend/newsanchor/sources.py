@@ -10,7 +10,43 @@ import yaml
 
 from .models import Source
 
-DEFAULT_REGISTRY = Path(__file__).resolve().parents[2] / "data" / "sources.yaml"
+# Where to look for the registry, in priority order. The file lives outside the
+# Python package on purpose -- it is configuration you are expected to edit, not
+# code -- which means it has to be found rather than imported.
+#
+#   1. NEWSANCHOR_SOURCES, if you keep your own roster somewhere else
+#   2. the repo checkout, which is what an editable install or a run from
+#      source resolves to, so your edits to data/sources.yaml take effect
+#   3. ./data/sources.yaml, for running from the repo root
+#   4. the copy bundled into the installed package, so `pip install .` works
+_PACKAGE_DIR = Path(__file__).resolve().parent
+
+
+def _repo_data_dir() -> Path | None:
+    """`<repo>/data` for a checkout laid out as `<repo>/backend/newsanchor/`.
+
+    Guarded: a package installed at a very shallow path has no parents[1].
+    """
+    parents = _PACKAGE_DIR.parents
+    return parents[1] / "data" if len(parents) > 1 else None
+
+
+def _candidates() -> list[Path]:
+    override = os.environ.get("NEWSANCHOR_SOURCES")
+    found = [Path(override)] if override else []
+
+    repo_data = _repo_data_dir()
+    if repo_data is not None:
+        found.append(repo_data / "sources.yaml")
+
+    found += [
+        Path.cwd() / "data" / "sources.yaml",
+        _PACKAGE_DIR / "data" / "sources.yaml",  # bundled with the wheel
+    ]
+    return found
+
+
+DEFAULT_REGISTRY = _PACKAGE_DIR.parents[1] / "data" / "sources.yaml"  # repo layout
 
 
 class RegistryError(ValueError):
@@ -42,9 +78,23 @@ def _coerce(raw: dict) -> Source:
     )
 
 
+def resolve_registry_path() -> Path:
+    """First readable registry from the search path, else a usable error."""
+    tried = _candidates()
+    for candidate in tried:
+        if candidate.is_file():
+            return candidate
+    raise RegistryError(
+        "could not find data/sources.yaml. Looked in:\n  "
+        + "\n  ".join(str(p) for p in tried)
+        + "\n\nRun newsanchor from the repository, install it with `pip install -e .`,"
+        " or point NEWSANCHOR_SOURCES at your own copy."
+    )
+
+
 def load_registry(path: Path | str | None = None) -> dict[str, Source]:
-    path = Path(path or os.environ.get("NEWSANCHOR_SOURCES") or DEFAULT_REGISTRY)
-    if not path.exists():
+    path = Path(path) if path is not None else resolve_registry_path()
+    if not path.is_file():
         raise RegistryError(f"source registry not found at {path}")
 
     doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
