@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+*.db
+*.sqlite3
+smoke-out/
