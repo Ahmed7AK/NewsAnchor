@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>Example Tech</title>
+  <entry>
+    <title type="html">New chip &lt;em&gt;doubles&lt;/em&gt; battery life</title>
+    <link rel="replies" href="https://tech.example.com/chip#comments"/>
+    <link rel="alternate" type="text/html" href="https://tech.example.com/chip"/>
+    <id>tag:tech.example.com,2026:chip</id>
+    <published>2026-11-04T08:15:00Z</published>
+    <updated>2026-11-04T09:00:00Z</updated>
+    <content type="html">&lt;figure&gt;&lt;img alt="" src="https://cdn.example.com/chip.jpg?w=1200&amp;amp;h=800" /&gt;&lt;/figure&gt;&lt;p&gt;The new design cuts power draw in half.&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>Only updated date</title>
+    <link href="https://tech.example.com/updated-only"/>
+    <updated>2026-11-04T07:00:00Z</updated>
+    <summary>Short summary.</summary>
+  </entry>
+</feed>

@@ -1,0 +1,19 @@
+{
+  "name": "daily-digest",
+  "version": "1.0.0",
+  "description": "A web app that collects each day's news from public RSS feeds into one clean page.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch-news.mjs",
+    "start": "node scripts/serve.mjs --refresh 60",
+    "serve": "node scripts/serve.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.12.0"
+  }
+}
