@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rss [<!ENTITY boom "BOOM">]>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Example News</title>
+    <link>https://example.com/</link>
+    <item>
+      <title><![CDATA[Markets rally as AT&T beats forecasts]]></title>
+      <link>https://www.example.com/business/markets-rally?at_medium=RSS&amp;at_campaign=rss</link>
+      <description><![CDATA[<p>Shares rose <b>3%</b> on Tuesday&nbsp;after the results.</p>]]></description>
+      <pubDate>Tue, 03 Nov 2026 14:30:00 GMT</pubDate>
+      <media:thumbnail width="240" height="135" url="https://img.example.com/small.jpg"/>
+      <media:thumbnail width="976" height="549" url="https://img.example.com/large.jpg"/>
+    </item>
+    <item>
+      <title>Escaped &amp;amp; double-encoded title &#8211; part 2</title>
+      <guid isPermaLink="true">https://example.com/story-2</guid>
+      <description>&lt;p&gt;Escaped &lt;a href="x"&gt;HTML&lt;/a&gt; summary &amp;amp; more&lt;/p&gt;&lt;img src="https://img.example.com/inline.jpg"&gt;</description>
+      <dc:date>2026-11-03T10:00:00+01:00</dc:date>
+    </item>
+    <item>
+      <title>Bad link is dropped</title>
+      <link>javascript:alert(1)</link>
+    </item>
+    <item>
+      <title>Undated story with enclosure &boom;</title>
+      <link>/relative/path</link>
+      <enclosure url="https://img.example.com/enc.png" type="image/png" length="1"/>
+      <media:content url="https://video.example.com/clip.mp4" medium="video"/>
+      <pubDate>not a date</pubDate>
+    </item>
+    <item>
+      <link>https://example.com/no-title</link>
+    </item>
+  </channel>
+</rss>

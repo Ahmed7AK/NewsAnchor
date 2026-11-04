@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Digest</title>
+  <meta name="description" content="Today's news from trusted publishers, gathered into one page and refreshed through the day.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#stories">Skip to stories</a>
+
+  <header class="masthead">
+    <div class="wrap masthead__top">
+      <a class="brand" href="./">Daily Digest</a>
+      <div class="daynav" aria-label="Choose a day">
+        <button type="button" id="older" class="iconbtn" aria-label="Previous day" title="Previous day">‹</button>
+        <select id="day" aria-label="Day"></select>
+        <button type="button" id="newer" class="iconbtn" aria-label="Next day" title="Next day">›</button>
+      </div>
+    </div>
+    <div class="wrap masthead__date">
+      <h1 id="dateline">Today’s news</h1>
+      <p id="meta" class="meta" aria-live="polite">Loading…</p>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <div class="wrap tabs__inner" id="tabs" role="tablist"></div>
+  </nav>
+
+  <main class="wrap" id="stories">
+    <div class="toolbar">
+      <label class="search">
+        <span class="visually-hidden">Search stories</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10 4a6 6 0 1 0 3.6 10.8l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+        <input type="search" id="q" placeholder="Search this day’s news" autocomplete="off">
+        <kbd aria-hidden="true">/</kbd>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="hideRead">
+        <span>Hide stories I’ve read</span>
+      </label>
+    </div>
+
+    <div id="notice" class="notice" hidden></div>
+    <section id="lead" class="lead" aria-label="Leading stories"></section>
+    <h2 id="moreHeading" class="section-title" hidden>More stories</h2>
+    <section id="grid" class="grid" aria-label="Stories"></section>
+    <div id="empty" class="empty" hidden></div>
+  </main>
+
+  <footer class="footer wrap">
+    <p id="sources"></p>
+    <p>Headlines and summaries come from each publisher’s public RSS feed and link to the original article.</p>
+  </footer>
+
+  <noscript><p class="wrap">Daily Digest needs JavaScript to show the news.</p></noscript>
+</body>
+</html>

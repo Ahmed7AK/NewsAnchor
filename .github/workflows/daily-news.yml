@@ -1,0 +1,54 @@
+name: Daily news
+
+on:
+  schedule:
+    # Four refreshes a day (UTC). Change these to suit your mornings.
+    - cron: '17 5,11,17,23 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Fetch today's news
+        run: npm run fetch
+        env:
+          # Restores earlier days from the live site so the archive carries over.
+          ARCHIVE_URL: ${{ steps.pages.outputs.base_url }}
+          # Set a repository variable NEWS_TZ (e.g. America/New_York) to decide when "today" starts.
+          NEWS_TZ: ${{ vars.NEWS_TZ || 'UTC' }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

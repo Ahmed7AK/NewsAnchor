@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "id": "top",
+      "label": "Top Stories",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/rss.xml" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1001/rss.xml" },
+        { "source": "Al Jazeera", "url": "https://www.aljazeera.com/xml/rss/all.xml" }
+      ]
+    },
+    {
+      "id": "world",
+      "label": "World",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" },
+        { "source": "The Guardian", "url": "https://www.theguardian.com/world/rss" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1004/rss.xml" }
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/business/rss.xml" },
+        { "source": "The Guardian", "url": "https://www.theguardian.com/business/rss" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1006/rss.xml" }
+      ]
+    },
+    {
+      "id": "technology",
+      "label": "Technology",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/technology/rss.xml" },
+        { "source": "Ars Technica", "url": "https://feeds.arstechnica.com/arstechnica/index" },
+        { "source": "The Verge", "url": "https://www.theverge.com/rss/index.xml" }
+      ]
+    },
+    {
+      "id": "science",
+      "label": "Science",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1007/rss.xml" },
+        { "source": "ScienceDaily", "url": "https://www.sciencedaily.com/rss/top/science.xml" }
+      ]
+    },
+    {
+      "id": "health",
+      "label": "Health",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/health/rss.xml" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1128/rss.xml" }
+      ]
+    },
+    {
+      "id": "sports",
+      "label": "Sports",
+      "feeds": [
+        { "source": "BBC Sport", "url": "https://feeds.bbci.co.uk/sport/rss.xml" },
+        { "source": "The Guardian", "url": "https://www.theguardian.com/sport/rss" }
+      ]
+    },
+    {
+      "id": "entertainment",
+      "label": "Entertainment",
+      "feeds": [
+        { "source": "BBC News", "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" },
+        { "source": "The Guardian", "url": "https://www.theguardian.com/culture/rss" },
+        { "source": "NPR", "url": "https://feeds.npr.org/1008/rss.xml" }
+      ]
+    }
+  ]
+}
